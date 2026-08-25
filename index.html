@@ -64,6 +64,7 @@
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
     .form-group { margin: 8px 0; }
     .form-group label { display: block; font-size: 0.85rem; color: var(--text-2); margin-bottom: 4px; }
+    .label-sub { display: block; font-size: 0.72rem; color: var(--text-muted); font-weight: normal; margin-top: 2px; }
     .weekday-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 8px 0; }
     .weekday-btn { padding: 6px 10px; font-size: 0.75rem; text-align: center; cursor: pointer; border: 1px solid var(--border-light); border-radius: 4px; background: var(--input-bg); color: var(--text); }
     .weekday-btn:hover { background: var(--hover-bg); }
@@ -99,7 +100,7 @@
     .page-footer > a { display: inline-block; color: var(--text-muted); font-size: 0.75rem; text-decoration: none; }
     .page-footer > a:hover { color: var(--accent); text-decoration: underline; }
     .note { font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; }
-    .hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+    .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
     .layout { display: block; }
     .col-settings, .col-output { min-width: 0; }
     @media (min-width: 900px) {
@@ -141,14 +142,14 @@
 
   <div class="form-row">
     <div class="form-group">
-      <label>小时 (0-23，逗号分隔多值，留空表示任意)</label>
+      <label>小时<span class="label-sub">(0-23，逗号分隔多值，留空表示任意)</span></label>
       <div class="input-row">
         <input type="text" id="hour" placeholder="如 3,4 或留空" value="3">
         <button class="clear-btn" data-target="hour" title="清空重置为任意">重置</button>
       </div>
     </div>
     <div class="form-group">
-      <label>分钟 (0-59，逗号分隔多值，留空表示任意)</label>
+      <label>分钟<span class="label-sub">(0-59，逗号分隔多值，留空表示任意)</span></label>
       <div class="input-row">
         <input type="text" id="minute" placeholder="如 0,15,30,45" value="25">
         <button class="clear-btn" data-target="minute" title="清空重置为任意">重置</button>
