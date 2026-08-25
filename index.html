@@ -136,8 +136,8 @@
     const monthInput = document.getElementById('month');
     const cronOutput = document.getElementById('cronOutput');
 
-    const modeBeijing = document.getElementById('mode-beijing');
-    const modeUtc = document.getElementById('utc-mode');
+    const modeBeijingRadio = document.getElementById('beijing-mode');
+    const modeUtcRadio = document.getElementById('utc-mode');
 
     function pad2(num) {
       return num.toString().padStart(2, '0');
@@ -158,7 +158,7 @@
       const minuteRaw = minuteSelect.value.trim();
       const dayRaw = dayInput.value.trim();
       const monthRaw = monthInput.value.trim();
-      const beijingMode = modeBeijing.checked;
+      const beijingMode = modeBeijingRadio.checked;
 
       // 解析多值：逗号分隔 -> 数组，过滤空值，校验范围
       const parseVals = (raw, min, max) => {
@@ -306,15 +306,16 @@
       });
     });
 
-    modeBeijing.addEventListener('change', () => {
-      modeBeijing.classList.toggle('selected', modeBeijing.querySelector('input').checked);
-      modeUtc.classList.toggle('selected', modeUtc.querySelector('input').checked);
-      updateCron();
-    });
-    modeUtc.addEventListener('change', () => {
-      modeBeijing.classList.toggle('selected', modeBeijing.querySelector('input').checked);
-      modeUtc.classList.toggle('selected', modeUtc.querySelector('input').checked);
-      updateCron();
+    function syncModeVisual() {
+      document.getElementById('mode-beijing').classList.toggle('selected', modeBeijingRadio.checked);
+      document.getElementById('mode-utc').classList.toggle('selected', modeUtcRadio.checked);
+    }
+
+    [modeBeijingRadio, modeUtcRadio].forEach(radio => {
+      radio.addEventListener('change', () => {
+        syncModeVisual();
+        updateCron();
+      });
     });
 
     updateCron();
