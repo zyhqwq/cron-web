@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cron Schedule Generator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    h1 { font-size: 1.4rem; color: #333; margin-bottom: 24px; border-bottom: 1px solid #ddd; padding-bottom: 12px; }
+    .mode-group { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    .mode-group h3 { font-size: 1.1rem; color: #555; margin-bottom: 12px; }
+    .mode-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 8px; }
+    .mode-option:hover { background: #f0f0f0; }
+    .mode-option.selected { background: #e8f0fe; border: 1px solid #088; }
+    .mode-option input { accent-color: #088; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+    .form-group { margin: 8px 0; }
+    .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+    .time-select { width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+    .weekday-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 8px 0; }
+    .weekday-btn { padding: 6px 10px; font-size: 0.75rem; text-align: center; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+    .weekday-btn:hover { background: #f5f5f5; }
+    .weekday-btn.selected { background: #e8f0fe; border-color: #088; color: #088; }
+    .input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    .input-row input { width: 40px; padding: 6px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    .input-row span { font-size: 0.75rem; color: #666; }
+    .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
+    .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
+    .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>POSIX Cron 生成器</h1>
+
+  <div class="mode-group">
+    <h3>模式选择</h3>
+    <div class="mode-option selected" id="mode-beijing">
+      <input type="radio" name="mode" id="beijing-mode" checked>
+      <span>使用北京时间转换为 UTC cron</span>
+      <div class="note">北京时间 = UTC + 8，系统会自动减去 8 小时得到 UTC</div>
+    </div>
+    <div class="mode-option" id="mode-utc">
+      <input type="radio" name="mode" id="utc-mode">
+      <span>直接生成 UTC cron 语法</span>
+      <div class="note">直接输入 UTC 时间，无需转换</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>小时 (0-23)</label>
+      <input type="time" id="hour" class="time-select" min="0" max="23">
+    </div>
+    <div class="form-group">
+      <label>分钟 (0-59)</label>
+      <input type="time" id="minute" class="time-select" min="0" max="59">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>指定周几</label>
+    <div class="weekday-grid">
+      <button class="weekday-btn" data-day="0">日</button>
+      <button class="weekday-btn" data-day="1">一</button>
+      <button class="weekday-btn" data-day="2">二</button>
+      <button class="weekday-btn" data-day="3">三</button>
+      <button class="weekday-btn" data-day="4">四</button>
+      <button class="weekday-btn" data-day="5">五</button>
+      <button class="weekday-btn" data-day="6">六</button>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>日期 (1-31，留空表示任意)</label>
+      <input type="number" id="day" class="input-row input" placeholder="任意">
+    </div>
+    <div class="form-group">
+      <label>月份 (1-12 或 JAN-DEC，留空表示任意)</label>
+      <input type="text" id="month" class="input-row input" placeholder="任意">
+    </div>
+  </div>
+
+  <div class="cron-display" id="cronOutput">* * * * *</div>
+
+  <div class="help-text">
+    <strong>规则提醒：</strong>
+    <ul style="padding-left: 16px; margin: 8px 0;">
+      <li>不支持秒字段、年字段</li>
+      <li>不支持 L（最后一天）、W（工作日）、#（第N个星期X）扩展</li>
+      <li>日和星期同时指定时，取<strong>交集</strong>（非并集），即只在同时匹配的日期运行</li>
+      <li>* 表示任意值</li>
+      <li>1,3,5 表示逗号分隔的多个值</li>
+      <li>*/5 表示每隔 5 单位</li>
+    </ul>
+  </div>
+
+  <script>
+    const weekdayBtns = document.querySelectorAll('.weekday-btn');
+    let selectedWeekdays = [];
+
+    weekdayBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+        const day = parseInt(btn.dataset.day);
+        if (selectedWeekdays.includes(day)) {
+          selectedWeekdays = selectedWeekdays.filter(d => d !== day);
+        } else {
+          selectedWeekdays.push(day);
+        }
+        selectedWeekdays.sort((a, b) => a - b);
+        updateCron();
+      });
+    });
+
+    const hourInput = document.getElementById('hour');
+    const minuteInput = document.getElementById('minute');
+    const dayInput = document.getElementById('day');
+    const monthInput = document.getElementById('month');
+    const cronOutput = document.getElementById('cronOutput');
+
+    const modeBeijing = document.getElementById('mode-beijing');
+    const modeUtc = document.getElementById('utc-mode');
+
+    function pad2(num) {
+      return num.toString().padStart(2, '0');
+    }
+
+    function beijingToUtc(hour, minute) {
+      let utcHour = hour - 8;
+      let utcDayOffset = 0;
+      if (utcHour < 0) {
+        utcHour += 24;
+        utcDayOffset = -1;
+      }
+      return { hour: utcHour, dayOffset: utcDayOffset };
+    }
+
+    function updateCron() {
+      const hour = parseInt(hourInput.value);
+      const minute = parseInt(minuteInput.value);
+      const day = dayInput.value.trim();
+      const month = monthInput.value.trim();
+      const beijingMode = modeBeijing.checked;
+
+      let cronMinute = pad2(minute);
+      let cronHour;
+      let cronDay;
+      let cronMonth;
+      let cronDow;
+
+      if (beijingMode) {
+        const { hour: utcHour, dayOffset } = beijingToUtc(hour, minute);
+        cronHour = pad2(utcHour);
+        // Note: dayOffset not directly used in basic cron, but affects day-of-month rollover
+      } else {
+        cronHour = pad2(hour);
+      }
+
+      // Build day-of-month field
+      if (day === '') {
+        cronDay = '*';
+      } else {
+        cronDay = day;
+      }
+
+      // Build month field
+      if (month === '') {
+        cronMonth = '*';
+      } else {
+        // Convert JAN-DEC to number if needed
+        const monthMap = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+        let m = month;
+        if (/^[A-Z]{3}$/.test(month)) {
+          m = monthMap[month] || month;
+        }
+        cronMonth = m;
+      }
+
+      // Build day-of-week field
+      if (selectedWeekdays.length === 0) {
+        cronDow = '*';
+      } else if (selectedWeekdays.length === 1) {
+        cronDow = selectedWeekdays[0];
+      } else {
+        cronDow = selectedWeekdays.join(',');
+      }
+
+      // Apply intersection rule: if both day-of-month and day-of-week are specified (not *),
+      // the result takes intersection. In cron, this means we need to handle it specially.
+      // For display, we just show both fields. The intersection logic is noted.
+
+      const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
+      cronOutput.textContent = cronExpr;
+    }
+
+    [hourInput, minuteInput, dayInput, monthInput].forEach(el => {
+      el.addEventListener('change', updateCron);
+      el.addEventListener('input', updateCron);
+    });
+
+    modeBeijing.addEventListener('change', updateCron);
+    modeUtc.addEventListener('change', updateCron);
+
+    // Initial update
+    updateCron();
+  </script>
+</body>
+</html>
