@@ -99,6 +99,13 @@
     .page-footer a { color: var(--text-muted); font-size: 0.75rem; text-decoration: none; }
     .page-footer a:hover { color: var(--accent); text-decoration: underline; }
     .note { font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; }
+    .layout { display: block; }
+    .col-settings, .col-output { min-width: 0; }
+    @media (min-width: 900px) {
+      body { max-width: 1100px; }
+      .layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 36px; align-items: start; }
+      .col-settings { position: sticky; top: 24px; }
+    }
   </style>
   <script>
     (function () {
@@ -114,6 +121,9 @@
     <h1>POSIX Cron 生成器</h1>
     <button id="themeBtn" class="theme-btn" type="button">主题: 自动</button>
   </div>
+
+  <div class="layout">
+  <div class="col-settings">
 
   <div class="mode-group">
     <h3>模式选择</h3>
@@ -175,6 +185,9 @@
       </div>
     </div>
   </div>
+  </div><!-- /col-settings -->
+
+  <div class="col-output">
 
   <div class="cron-header">
     <span class="cron-label">Cron 表达式（UTC，可直接编辑或粘贴）</span>
@@ -208,6 +221,8 @@
       <li>*/5 表示每隔 5 单位</li>
     </ul>
   </div>
+  </div><!-- /col-output -->
+  </div><!-- /layout -->
 
   <footer class="page-footer">
     <a href="https://github.com/zyhqwq/cron-web" target="_blank" rel="noopener">github.com/zyhqwq/cron-web</a>
