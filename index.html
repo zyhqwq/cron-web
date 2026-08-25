@@ -24,8 +24,8 @@
     .weekday-btn.selected { background: #e8f0fe; border-color: #088; color: #088; }
     .input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .input-row input { width: 100%; padding: 6px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    .clear-btn { cursor: pointer; color: #999; font-size: 0.85rem; padding: 0 4px; }
-    .clear-btn:hover { color: #333; }
+    .clear-btn { cursor: pointer; color: #555; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 4px 10px; font-size: 0.75rem; height: 34px; }
+    .clear-btn:hover { background: #e8e8e8; color: #333; }
     .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8px; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
     .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
     .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
@@ -165,14 +165,14 @@
       <label>日期 (1-31，留空表示任意)</label>
       <div class="input-row">
         <input type="number" id="day" placeholder="任意" min="1" max="31">
-        <span class="clear-btn" data-target="day" title="清空重置为任意">×</span>
+        <button class="clear-btn" data-target="day" title="清空重置为任意">重置</button>
       </div>
     </div>
     <div class="form-group">
       <label>月份 (1-12 或 JAN-DEC，留空表示任意)</label>
       <div class="input-row">
         <input type="text" id="month" placeholder="任意">
-        <span class="clear-btn" data-target="month" title="清空重置为任意">×</span>
+        <button class="clear-btn" data-target="month" title="清空重置为任意">重置</button>
       </div>
     </div>
   </div>
