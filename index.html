@@ -28,6 +28,7 @@
     .clear-btn:hover { background: #e8e8e8; color: #333; }
     .input-row input.error { border-color: #c00; background: #fff0f0; }
     .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8px; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
+    .cron-explain { color: #555; font-size: 0.9rem; margin: -16px 0 20px; padding-left: 2px; }
     .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
     .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
   </style>
@@ -97,6 +98,7 @@
   </div>
 
   <div class="cron-display" id="cronOutput">* * * * *</div>
+  <div class="cron-explain" id="cronExplain">每分钟运行</div>
 
   <div class="help-text">
     <strong>规则提醒：</strong>
@@ -232,6 +234,60 @@
 
       const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
       cronOutput.textContent = cronExpr;
+
+      // 生成中文解释（始终按北京时间语义）
+      const explain = generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, selectedWeekdays, hourAny, minuteAny, dayAny, monthAny);
+      document.getElementById('cronExplain').textContent = explain;
+    }
+
+    function generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, weekdays, hourAny, minuteAny, dayAny, monthAny) {
+      // 北京时间的小时/分钟
+      let bjHours, bjMinutes;
+      if (beijingMode) {
+        // 用户输入就是北京时间
+        bjHours = hourAny ? null : hourVals;
+        bjMinutes = minuteAny ? null : minuteVals;
+      } else {
+        // 用户输入是 UTC，转为北京时间（+8）
+        bjHours = hourAny ? null : hourVals.map(h => { let b = h + 8; if (b >= 24) b -= 24; return b; });
+        bjMinutes = minuteAny ? null : minuteVals;
+      }
+
+      // 时间部分
+      let timeStr = '';
+      if (bjHours && bjMinutes) {
+        const times = bjHours.map((h, i) => {
+          const m = bjMinutes[i % bjMinutes.length];
+          return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        });
+        timeStr = `每天 ${times.join('、')}`;
+      } else if (bjHours) {
+        timeStr = `每天 ${bjHours.map(h => `${h.toString().padStart(2, '0')}:00`).join('、')}`;
+      } else if (bjMinutes) {
+        timeStr = `每小时的 ${bjMinutes.map(m => `第${m}分`).join('、')}`;
+      } else {
+        timeStr = '每分钟';
+      }
+
+      // 日期部分
+      let dateStr = '';
+      if (!dayAny) {
+        dateStr = `每月 ${dayVals.join('、')}号`;
+      }
+      if (!monthAny) {
+        const mStr = monthVals.map(m => `${m}月`).join('、');
+        dateStr = dateStr ? dateStr.replace('每月', mStr) : mStr;
+      }
+      if (dateStr) timeStr = dateStr + timeStr;
+
+      // 星期部分
+      if (weekdays.length > 0) {
+        const weekMap = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        const wkStr = weekdays.map(w => weekMap[w]).join('、');
+        timeStr = `每周 ${wkStr} ` + timeStr;
+      }
+
+      return timeStr + ' 运行';
     }
 
     [hourSelect, minuteSelect, dayInput, monthInput].forEach(el => {
