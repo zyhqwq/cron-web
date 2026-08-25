@@ -275,6 +275,7 @@
 
       const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
       cronOutput.value = cronExpr;
+      cronOutput.classList.remove('error');
 
       let warn = '';
       if (hourParsed.error || minuteParsed.error || dayParsed.error || monthParsed.error) {
