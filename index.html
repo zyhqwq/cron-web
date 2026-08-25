@@ -35,7 +35,16 @@
     .copy-btn:hover { background: #1557b0; }
     .copy-btn:active { transform: scale(0.96); }
     .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8px; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
-    .cron-explain { color: #555; font-size: 0.9rem; margin: -16px 0 20px; padding-left: 2px; }
+    .cron-explain { color: #555; font-size: 0.9rem; margin: -16px 0 6px; padding-left: 2px; }
+    .cron-status { font-size: 0.8rem; margin: 0 2px 18px; }
+    .cron-status.ok { color: #188038; }
+    .cron-status.err { color: #c5221f; }
+    .next-runs { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; background: #fafafa; }
+    .nr-title { font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 8px; }
+    .nr-row { display: flex; gap: 18px; font-size: 0.85rem; padding: 3px 0; flex-wrap: wrap; }
+    .nr-utc { color: #555; min-width: 230px; }
+    .nr-cct { color: #1a56c4; font-weight: 600; }
+    .nr-empty { color: #999; font-size: 0.8rem; }
     .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
     .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
   </style>
@@ -110,6 +119,12 @@
   </div>
   <div class="cron-display" id="cronOutput">* * * * *</div>
   <div class="cron-explain" id="cronExplain">每分钟运行</div>
+  <div class="cron-status ok" id="cronStatus">校验：表达式有效</div>
+
+  <div class="next-runs">
+    <div class="nr-title">未来运行时间（接下来 3 次）</div>
+    <div id="nextRunsBody"><div class="nr-empty">-</div></div>
+  </div>
 
   <div class="help-text">
     <strong>规则提醒：</strong>
@@ -246,9 +261,98 @@
       const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
       cronOutput.textContent = cronExpr;
 
+      // 校验表达式
+      const statusEl = document.getElementById('cronStatus');
+      const v = validateExpr(cronExpr);
+      let warn = '';
+      if (hourParsed.error || minuteParsed.error || dayParsed.error || monthParsed.error) {
+        warn = '；存在非法输入(红框)，对应字段已按任意(*)处理';
+      }
+      statusEl.textContent = '校验：' + v.msg + warn;
+      statusEl.classList.toggle('ok', v.ok);
+      statusEl.classList.toggle('err', !v.ok);
+
+      // 未来运行时间
+      renderNextRuns(cronExpr);
+
       // 生成中文解释（按当前模式标注时区）
       const explain = generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, selectedWeekdays, hourAny, minuteAny, dayAny, monthAny);
       document.getElementById('cronExplain').textContent = explain;
+    }
+
+    function validateExpr(expr) {
+      const parts = expr.trim().split(/\s+/);
+      if (parts.length !== 5) return { ok: false, msg: '字段数不是 5 个' };
+      const names = ['分钟', '小时', '日', '月', '星期'];
+      const ranges = [[0,59],[0,23],[1,31],[1,12],[0,6]];
+      for (let i = 0; i < 5; i++) {
+        if (parts[i] === '*') continue;
+        for (const v of parts[i].split(',')) {
+          if (!/^\d+$/.test(v)) return { ok: false, msg: `${names[i]}字段含非法值 "${v}"` };
+          const n = parseInt(v, 10);
+          if (n < ranges[i][0] || n > ranges[i][1]) return { ok: false, msg: `${names[i]}字段 ${n} 超出范围 ${ranges[i][0]}-${ranges[i][1]}` };
+        }
+      }
+      return { ok: true, msg: '表达式有效，5 字段均在合法范围' };
+    }
+
+    function matchField(field, value) {
+      if (field === '*') return true;
+      return field.split(',').some(v => parseInt(v, 10) === value);
+    }
+
+    function cronMatches(d, expr) {
+      const f = expr.trim().split(/\s+/);
+      if (!matchField(f[0], d.getUTCMinutes())) return false;
+      if (!matchField(f[1], d.getUTCHours())) return false;
+      if (!matchField(f[3], d.getUTCMonth() + 1)) return false;
+      const domRestricted = f[2] !== '*';
+      const dowRestricted = f[4] !== '*';
+      const domMatch = matchField(f[2], d.getUTCDate());
+      const dowMatch = matchField(f[4], d.getUTCDay());
+      // 本工具规则：日与星期同时指定时取交集
+      if (domRestricted && dowRestricted) return domMatch && dowMatch;
+      if (domRestricted) return domMatch;
+      if (dowRestricted) return dowMatch;
+      return true;
+    }
+
+    function nextRuns(expr, count) {
+      const results = [];
+      const d = new Date();
+      d.setUTCSeconds(0, 0);
+      d.setUTCMinutes(d.getUTCMinutes() + 1);
+      const limit = Date.now() + 400 * 24 * 3600 * 1000;
+      while (results.length < count && d.getTime() < limit) {
+        if (cronMatches(d, expr)) results.push(new Date(d.getTime()));
+        d.setUTCMinutes(d.getUTCMinutes() + 1);
+      }
+      return results;
+    }
+
+    const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+    function fmtUTC(d) {
+      const p = n => n.toString().padStart(2, '0');
+      return `${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())} ${weekNames[d.getUTCDay()]} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+    }
+
+    function fmtCCT(d) {
+      const b = new Date(d.getTime() + 8 * 3600 * 1000);
+      const p = n => n.toString().padStart(2, '0');
+      return `${p(b.getUTCMonth()+1)}-${p(b.getUTCDate())} ${weekNames[b.getUTCDay()]} ${p(b.getUTCHours())}:${p(b.getUTCMinutes())}`;
+    }
+
+    function renderNextRuns(expr) {
+      const body = document.getElementById('nextRunsBody');
+      const runs = nextRuns(expr, 3);
+      if (runs.length === 0) {
+        body.innerHTML = '<div class="nr-empty">未来一年内无匹配时间</div>';
+        return;
+      }
+      body.innerHTML = runs.map((d, i) =>
+        `<div class="nr-row"><span class="nr-utc">第${i+1}次 UTC ${fmtUTC(d)}</span><span class="nr-cct">北京时间(CCT) ${fmtCCT(d)}</span></div>`
+      ).join('');
     }
 
     function generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, weekdays, hourAny, minuteAny, dayAny, monthAny) {
