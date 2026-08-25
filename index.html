@@ -23,9 +23,10 @@
     .weekday-btn:hover { background: #f5f5f5; }
     .weekday-btn.selected { background: #e8f0fe; border-color: #088; color: #088; }
     .input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-    .input-row input { width: 40px; padding: 6px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    .input-row span { font-size: 0.75rem; color: #666; }
-    .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
+    .input-row input { width: 100%; padding: 6px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    .clear-btn { cursor: pointer; color: #999; font-size: 0.85rem; padding: 0 4px; }
+    .clear-btn:hover { color: #333; }
+    .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8px; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
     .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
     .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
   </style>
@@ -50,11 +51,99 @@
   <div class="form-row">
     <div class="form-group">
       <label>小时 (0-23)</label>
-      <input type="time" id="hour" class="time-select" min="0" max="23">
+      <select id="hour" class="time-select">
+        <option value="">任意</option>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+        <option value="16">16</option>
+        <option value="17">17</option>
+        <option value="18">18</option>
+        <option value="19">19</option>
+        <option value="20">20</option>
+        <option value="21">21</option>
+        <option value="22">22</option>
+        <option value="23">23</option>
+      </select>
     </div>
     <div class="form-group">
       <label>分钟 (0-59)</label>
-      <input type="time" id="minute" class="time-select" min="0" max="59">
+      <select id="minute" class="time-select">
+        <option value="">任意</option>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+        <option value="16">16</option>
+        <option value="17">17</option>
+        <option value="18">18</option>
+        <option value="19">19</option>
+        <option value="20">20</option>
+        <option value="21">21</option>
+        <option value="22">22</option>
+        <option value="23">23</option>
+        <option value="24">24</option>
+        <option value="25">25</option>
+        <option value="26">26</option>
+        <option value="27">27</option>
+        <option value="28">28</option>
+        <option value="29">29</option>
+        <option value="30">30</option>
+        <option value="31">31</option>
+        <option value="32">32</option>
+        <option value="33">33</option>
+        <option value="34">34</option>
+        <option value="35">35</option>
+        <option value="36">36</option>
+        <option value="37">37</option>
+        <option value="38">38</option>
+        <option value="39">39</option>
+        <option value="40">40</option>
+        <option value="41">41</option>
+        <option value="42">42</option>
+        <option value="43">43</option>
+        <option value="44">44</option>
+        <option value="45">45</option>
+        <option value="46">46</option>
+        <option value="47">47</option>
+        <option value="48">48</option>
+        <option value="49">49</option>
+        <option value="50">50</option>
+        <option value="51">51</option>
+        <option value="52">52</option>
+        <option value="53">53</option>
+        <option value="54">54</option>
+        <option value="55">55</option>
+        <option value="56">56</option>
+        <option value="57">57</option>
+        <option value="58">58</option>
+        <option value="59">59</option>
+      </select>
     </div>
   </div>
 
@@ -74,11 +163,17 @@
   <div class="form-row">
     <div class="form-group">
       <label>日期 (1-31，留空表示任意)</label>
-      <input type="number" id="day" class="input-row input" placeholder="任意">
+      <div class="input-row">
+        <input type="number" id="day" placeholder="任意" min="1" max="31">
+        <span class="clear-btn" data-target="day" title="清空重置为任意">×</span>
+      </div>
     </div>
     <div class="form-group">
       <label>月份 (1-12 或 JAN-DEC，留空表示任意)</label>
-      <input type="text" id="month" class="input-row input" placeholder="任意">
+      <div class="input-row">
+        <input type="text" id="month" placeholder="任意">
+        <span class="clear-btn" data-target="month" title="清空重置为任意">×</span>
+      </div>
     </div>
   </div>
 
@@ -114,8 +209,8 @@
       });
     });
 
-    const hourInput = document.getElementById('hour');
-    const minuteInput = document.getElementById('minute');
+    const hourSelect = document.getElementById('hour');
+    const minuteSelect = document.getElementById('minute');
     const dayInput = document.getElementById('day');
     const monthInput = document.getElementById('month');
     const cronOutput = document.getElementById('cronOutput');
@@ -138,47 +233,36 @@
     }
 
     function updateCron() {
-      const hour = parseInt(hourInput.value);
-      const minute = parseInt(minuteInput.value);
+      const hourVal = hourSelect.value;
+      const minuteVal = minuteSelect.value;
       const day = dayInput.value.trim();
       const month = monthInput.value.trim();
       const beijingMode = modeBeijing.checked;
 
-      let cronMinute = pad2(minute);
+      const hourAny = hourVal === '';
+      const minuteAny = minuteVal === '';
+
+      const hourNum = hourAny ? 0 : parseInt(hourVal, 10);
+      const minuteNum = minuteAny ? 0 : parseInt(minuteVal, 10);
+
+      let cronMinute;
       let cronHour;
       let cronDay;
       let cronMonth;
       let cronDow;
 
       if (beijingMode) {
-        const { hour: utcHour, dayOffset } = beijingToUtc(hour, minute);
-        cronHour = pad2(utcHour);
-        // Note: dayOffset not directly used in basic cron, but affects day-of-month rollover
+        const { hour: utcHour } = beijingToUtc(hourNum, minuteNum);
+        cronHour = hourAny ? '*' : pad2(utcHour);
+        cronMinute = minuteAny ? '*' : pad2(minuteNum);
       } else {
-        cronHour = pad2(hour);
+        cronHour = hourAny ? '*' : pad2(hourNum);
+        cronMinute = minuteAny ? '*' : pad2(minuteNum);
       }
 
-      // Build day-of-month field
-      if (day === '') {
-        cronDay = '*';
-      } else {
-        cronDay = day;
-      }
+      cronDay = day === '' ? '*' : day;
+      cronMonth = month === '' ? '*' : month;
 
-      // Build month field
-      if (month === '') {
-        cronMonth = '*';
-      } else {
-        // Convert JAN-DEC to number if needed
-        const monthMap = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
-        let m = month;
-        if (/^[A-Z]{3}$/.test(month)) {
-          m = monthMap[month] || month;
-        }
-        cronMonth = m;
-      }
-
-      // Build day-of-week field
       if (selectedWeekdays.length === 0) {
         cronDow = '*';
       } else if (selectedWeekdays.length === 1) {
@@ -187,23 +271,29 @@
         cronDow = selectedWeekdays.join(',');
       }
 
-      // Apply intersection rule: if both day-of-month and day-of-week are specified (not *),
-      // the result takes intersection. In cron, this means we need to handle it specially.
-      // For display, we just show both fields. The intersection logic is noted.
-
       const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
       cronOutput.textContent = cronExpr;
     }
 
-    [hourInput, minuteInput, dayInput, monthInput].forEach(el => {
+    [hourSelect, minuteSelect, dayInput, monthInput].forEach(el => {
       el.addEventListener('change', updateCron);
       el.addEventListener('input', updateCron);
+    });
+
+    document.querySelectorAll('.clear-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.value = '';
+          updateCron();
+        }
+      });
     });
 
     modeBeijing.addEventListener('change', updateCron);
     modeUtc.addEventListener('change', updateCron);
 
-    // Initial update
     updateCron();
   </script>
 </body>
