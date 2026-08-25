@@ -235,50 +235,43 @@
       const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
       cronOutput.textContent = cronExpr;
 
-      // 生成中文解释（始终按北京时间语义）
+      // 生成中文解释（按当前模式标注时区）
       const explain = generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, selectedWeekdays, hourAny, minuteAny, dayAny, monthAny);
       document.getElementById('cronExplain').textContent = explain;
     }
 
     function generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, weekdays, hourAny, minuteAny, dayAny, monthAny) {
-      // 北京时间的小时/分钟
-      let bjHours, bjMinutes;
-      if (beijingMode) {
-        // 用户输入就是北京时间
-        bjHours = hourAny ? null : hourVals;
-        bjMinutes = minuteAny ? null : minuteVals;
-      } else {
-        // 用户输入是 UTC，转为北京时间（+8）
-        bjHours = hourAny ? null : hourVals.map(h => { let b = h + 8; if (b >= 24) b -= 24; return b; });
-        bjMinutes = minuteAny ? null : minuteVals;
-      }
+      // 时区标签：按输入语义显示
+      const tzLabel = beijingMode ? '北京时间' : '格林威治标准时间(UTC)';
+      const hours = hourAny ? null : hourVals;
+      const minutes = minuteAny ? null : minuteVals;
 
       // 时间部分
       let timeStr = '';
-      if (bjHours && bjMinutes) {
-        const times = bjHours.map((h, i) => {
-          const m = bjMinutes[i % bjMinutes.length];
+      if (hours && minutes) {
+        const times = hours.map((h, i) => {
+          const m = minutes[i % minutes.length];
           return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         });
         timeStr = `每天 ${times.join('、')}`;
-      } else if (bjHours) {
-        timeStr = `每天 ${bjHours.map(h => `${h.toString().padStart(2, '0')}:00`).join('、')}`;
-      } else if (bjMinutes) {
-        timeStr = `每小时的 ${bjMinutes.map(m => `第${m}分`).join('、')}`;
+      } else if (hours) {
+        timeStr = `每天 ${hours.map(h => `${h.toString().padStart(2, '0')}:00`).join('、')}`;
+      } else if (minutes) {
+        timeStr = `每小时的第 ${minutes.join('、')} 分`;
       } else {
-        timeStr = '每分钟';
+        timeStr = '每小时每分钟';
       }
 
       // 日期部分
       let dateStr = '';
       if (!dayAny) {
-        dateStr = `每月 ${dayVals.join('、')}号`;
+        dateStr = `每月 ${dayVals.join('、')} 号`;
       }
       if (!monthAny) {
-        const mStr = monthVals.map(m => `${m}月`).join('、');
-        dateStr = dateStr ? dateStr.replace('每月', mStr) : mStr;
+        const mStr = monthVals.map(m => `${m} 月`).join('、');
+        dateStr = dateStr ? dateStr.replace(/每月/, mStr + ' 每月') : mStr;
       }
-      if (dateStr) timeStr = dateStr + timeStr;
+      if (dateStr) timeStr = dateStr + ' 的' + timeStr;
 
       // 星期部分
       if (weekdays.length > 0) {
@@ -287,7 +280,7 @@
         timeStr = `每周 ${wkStr} ` + timeStr;
       }
 
-      return timeStr + ' 运行';
+      return `${tzLabel}${timeStr} 运行`;
     }
 
     [hourSelect, minuteSelect, dayInput, monthInput].forEach(el => {
@@ -310,6 +303,18 @@
       document.getElementById('mode-beijing').classList.toggle('selected', modeBeijingRadio.checked);
       document.getElementById('mode-utc').classList.toggle('selected', modeUtcRadio.checked);
     }
+
+    // 点击整个模式卡片切换模式
+    document.querySelectorAll('.mode-option').forEach(card => {
+      card.addEventListener('click', () => {
+        const radio = card.querySelector('input');
+        if (!radio.checked) {
+          radio.checked = true;
+          syncModeVisual();
+          updateCron();
+        }
+      });
+    });
 
     [modeBeijingRadio, modeUtcRadio].forEach(radio => {
       radio.addEventListener('change', () => {
