@@ -31,6 +31,9 @@
     .input-row input.error { border-color: #c00; background: #fff0f0; }
     .cron-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: -14px; }
     .cron-label { font-size: 0.8rem; color: #666; }
+    .cron-input { width: 100%; background: #1a1a2e; color: #f5c542; font-family: ui-monospace, Consolas, monospace; font-size: 1.15rem; padding: 13px 16px; border-radius: 8px; border: 2px solid transparent; letter-spacing: 3px; }
+    .cron-input:focus { outline: none; border-color: #1a73e8; }
+    .cron-input.error { border-color: #c5221f; }
     .copy-btn { cursor: pointer; background: #1a73e8; color: #fff; border: none; border-radius: 4px; padding: 5px 14px; font-size: 0.8rem; }
     .copy-btn:hover { background: #1557b0; }
     .copy-btn:active { transform: scale(0.96); }
@@ -45,6 +48,8 @@
     .nr-utc { color: #555; min-width: 230px; }
     .nr-cct { color: #1a56c4; font-weight: 600; }
     .nr-empty { color: #999; font-size: 0.8rem; }
+    .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .gh-yaml { background: #1a1a2e; color: #9cdcfe; font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; padding: 12px 14px; border-radius: 6px; overflow-x: auto; margin: 0 0 8px; white-space: pre; }
     .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
     .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
   </style>
@@ -114,16 +119,24 @@
   </div>
 
   <div class="cron-header">
-    <span class="cron-label">生成的 Cron 表达式（UTC）</span>
+    <span class="cron-label">Cron 表达式（UTC，可直接编辑或粘贴）</span>
     <button class="copy-btn" id="copyBtn">复制</button>
   </div>
-  <div class="cron-display" id="cronOutput">* * * * *</div>
+  <input type="text" id="cronOutput" class="cron-input" value="* * * * *" spellcheck="false">
   <div class="cron-explain" id="cronExplain">每分钟运行</div>
   <div class="cron-status ok" id="cronStatus">校验：表达式有效</div>
 
   <div class="next-runs">
     <div class="nr-title">未来运行时间（接下来 3 次）</div>
     <div id="nextRunsBody"><div class="nr-empty">-</div></div>
+  </div>
+
+  <div class="next-runs">
+    <div class="box-header">
+      <span class="nr-title" style="margin-bottom:0;">GitHub Actions 工作流用法</span>
+      <button class="copy-btn" id="copyYamlBtn">复制 YAML</button>
+    </div>
+    <pre class="gh-yaml" id="ghYaml"></pre>
   </div>
 
   <div class="help-text">
@@ -259,25 +272,84 @@
       }
 
       const cronExpr = `${cronMinute} ${cronHour} ${cronDay} ${cronMonth} ${cronDow}`;
-      cronOutput.textContent = cronExpr;
+      cronOutput.value = cronExpr;
 
-      // 校验表达式
-      const statusEl = document.getElementById('cronStatus');
-      const v = validateExpr(cronExpr);
       let warn = '';
       if (hourParsed.error || minuteParsed.error || dayParsed.error || monthParsed.error) {
         warn = '；存在非法输入(红框)，对应字段已按任意(*)处理';
       }
-      statusEl.textContent = '校验：' + v.msg + warn;
+      refreshDerived(cronExpr, warn);
+    }
+
+    function refreshDerived(expr, extraWarn) {
+      const statusEl = document.getElementById('cronStatus');
+      const v = validateExpr(expr);
+      statusEl.textContent = '校验：' + v.msg + (extraWarn || '');
       statusEl.classList.toggle('ok', v.ok);
       statusEl.classList.toggle('err', !v.ok);
 
-      // 未来运行时间
-      renderNextRuns(cronExpr);
+      renderNextRuns(v.ok ? expr : null);
+      document.getElementById('cronExplain').textContent = v.ok ? explainFromExpr(expr) : '表达式无效';
 
-      // 生成中文解释（按当前模式标注时区）
-      const explain = generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, selectedWeekdays, hourAny, minuteAny, dayAny, monthAny);
-      document.getElementById('cronExplain').textContent = explain;
+      document.getElementById('ghYaml').textContent =
+'name: Scheduled Job\n' +
+'on:\n' +
+'  schedule:\n' +
+"    - cron: '" + expr + "'\n" +
+'jobs:\n' +
+'  run:\n' +
+'    runs-on: ubuntu-latest\n' +
+'    steps:\n' +
+'      - name: Do work\n' +
+'        run: echo "running"';
+    }
+
+    function explainFromExpr(expr) {
+      const f = expr.trim().split(/\s+/);
+      const tzLabel = modeBeijingRadio.checked ? '北京时间' : '格林威治标准时间(UTC)';
+      const pf = s => s === '*' ? null : s.split(',').map(x => parseInt(x, 10));
+      const minutes = pf(f[0]), hours = pf(f[1]);
+      const days = pf(f[2]), months = pf(f[3]);
+
+      let timeStr;
+      if (hours && minutes) {
+        const times = hours.map((h, i) =>
+          `${h.toString().padStart(2, '0')}:${minutes[i % minutes.length].toString().padStart(2, '0')}`);
+        timeStr = `每天 ${times.join('、')}`;
+      } else if (hours) {
+        timeStr = `每天 ${hours.map(h => `${h.toString().padStart(2, '0')}:00`).join('、')}`;
+      } else if (minutes) {
+        timeStr = `每小时的第 ${minutes.join('、')} 分`;
+      } else {
+        timeStr = '每小时每分钟';
+      }
+
+      let dateStr = '';
+      if (days) dateStr = `每月 ${days.join('、')} 号`;
+      if (months) {
+        const mStr = months.map(m => `${m} 月`).join('、');
+        dateStr = dateStr ? dateStr.replace(/每月/, mStr + ' 每月') : mStr;
+      }
+      if (dateStr) timeStr = dateStr + ' 的' + timeStr;
+
+      if (f[4] !== '*') {
+        const wk = f[4].split(',').map(n => weekNames[parseInt(n, 10)] || n).join('、');
+        timeStr = `每周 ${wk} ` + timeStr;
+      }
+      return `${tzLabel}${timeStr} 运行`;
+    }
+
+    function syncControlsFromExpr(expr) {
+      const f = expr.trim().split(/\s+/);
+      hourSelect.value = f[0] === '*' ? '' : f[0];
+      minuteSelect.value = f[1] === '*' ? '' : f[1];
+      dayInput.value = f[2] === '*' ? '' : f[2];
+      monthInput.value = f[3] === '*' ? '' : f[3];
+      selectedWeekdays = f[4] === '*' ? [] : f[4].split(',').map(Number).sort((a, b) => a - b);
+      document.querySelectorAll('.weekday-btn').forEach(b => {
+        b.classList.toggle('selected', selectedWeekdays.includes(parseInt(b.dataset.day, 10)));
+      });
+      [hourSelect, minuteSelect, dayInput, monthInput].forEach(el => el.classList.remove('error'));
     }
 
     function validateExpr(expr) {
@@ -355,49 +427,6 @@
       ).join('');
     }
 
-    function generateExplain(beijingMode, hourVals, minuteVals, dayVals, monthVals, weekdays, hourAny, minuteAny, dayAny, monthAny) {
-      // 时区标签：按输入语义显示
-      const tzLabel = beijingMode ? '北京时间' : '格林威治标准时间(UTC)';
-      const hours = hourAny ? null : hourVals;
-      const minutes = minuteAny ? null : minuteVals;
-
-      // 时间部分
-      let timeStr = '';
-      if (hours && minutes) {
-        const times = hours.map((h, i) => {
-          const m = minutes[i % minutes.length];
-          return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-        });
-        timeStr = `每天 ${times.join('、')}`;
-      } else if (hours) {
-        timeStr = `每天 ${hours.map(h => `${h.toString().padStart(2, '0')}:00`).join('、')}`;
-      } else if (minutes) {
-        timeStr = `每小时的第 ${minutes.join('、')} 分`;
-      } else {
-        timeStr = '每小时每分钟';
-      }
-
-      // 日期部分
-      let dateStr = '';
-      if (!dayAny) {
-        dateStr = `每月 ${dayVals.join('、')} 号`;
-      }
-      if (!monthAny) {
-        const mStr = monthVals.map(m => `${m} 月`).join('、');
-        dateStr = dateStr ? dateStr.replace(/每月/, mStr + ' 每月') : mStr;
-      }
-      if (dateStr) timeStr = dateStr + ' 的' + timeStr;
-
-      // 星期部分
-      if (weekdays.length > 0) {
-        const weekMap = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-        const wkStr = weekdays.map(w => weekMap[w]).join('、');
-        timeStr = `每周 ${wkStr} ` + timeStr;
-      }
-
-      return `${tzLabel}${timeStr} 运行`;
-    }
-
     [hourSelect, minuteSelect, dayInput, monthInput].forEach(el => {
       el.addEventListener('change', updateCron);
       el.addEventListener('input', updateCron);
@@ -455,10 +484,43 @@
 
     document.getElementById('copyBtn').addEventListener('click', () => {
       const btn = document.getElementById('copyBtn');
-      const text = cronOutput.textContent;
+      const text = cronOutput.value;
       const done = () => {
         btn.textContent = '已复制';
         setTimeout(() => { btn.textContent = '复制'; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+      } else {
+        fallbackCopy(text, done);
+      }
+    });
+
+    // 手动编辑 cron 表达式：反向同步控件并刷新派生信息
+    cronOutput.addEventListener('input', () => {
+      const expr = cronOutput.value.trim();
+      const parts = expr.split(/\s+/);
+      const valid = parts.length === 5 && validateExpr(expr).ok;
+      cronOutput.classList.toggle('error', !valid);
+      if (valid) {
+        syncControlsFromExpr(expr);
+        refreshDerived(expr);
+      } else if (parts.length === 5) {
+        const v = validateExpr(expr);
+        const statusEl = document.getElementById('cronStatus');
+        statusEl.textContent = '校验：' + v.msg;
+        statusEl.classList.toggle('ok', false);
+        statusEl.classList.toggle('err', true);
+      }
+    });
+
+    // 复制 YAML
+    document.getElementById('copyYamlBtn').addEventListener('click', () => {
+      const btn = document.getElementById('copyYamlBtn');
+      const text = document.getElementById('ghYaml').textContent;
+      const done = () => {
+        btn.textContent = '已复制';
+        setTimeout(() => { btn.textContent = '复制 YAML'; }, 1500);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
