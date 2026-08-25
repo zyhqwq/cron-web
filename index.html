@@ -31,9 +31,11 @@
     .input-row input.error { border-color: #c00; background: #fff0f0; }
     .cron-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .cron-label { font-size: 0.8rem; color: #666; }
-    .cron-input { width: 100%; background: #1a1a2e; color: #f5c542; font-family: ui-monospace, Consolas, monospace; font-size: 1.15rem; padding: 13px 16px; border-radius: 8px; border: 2px solid transparent; letter-spacing: 3px; box-sizing: border-box; }
-    .cron-input:focus { outline: none; border-color: #1a73e8; }
+    .cron-input { width: 100%; background: #fff; color: #1a1a2e; font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 1.15rem; padding: 11px 14px; border-radius: 6px; border: 1px solid #ccc; letter-spacing: 3px; box-sizing: border-box; cursor: text; }
+    .cron-input:hover { border-color: #999; }
+    .cron-input:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15); }
     .cron-input.error { border-color: #c5221f; }
+    .cron-input.error:focus { box-shadow: 0 0 0 2px rgba(197,34,31,0.12); }
     .copy-btn { cursor: pointer; background: #1a73e8; color: #fff; border: none; border-radius: 4px; padding: 5px 14px; font-size: 0.8rem; }
     .copy-btn:hover { background: #1557b0; }
     .copy-btn:active { transform: scale(0.96); }
