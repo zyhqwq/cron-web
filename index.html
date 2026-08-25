@@ -77,7 +77,7 @@
     <div class="form-group">
       <label>小时 (0-23，逗号分隔多值，留空表示任意)</label>
       <div class="input-row">
-        <input type="text" id="hour" placeholder="如 3,4 或留空" value="3">
+        <input type="text" id="hour" placeholder="如 3,4 或留空" value="19">
         <button class="clear-btn" data-target="hour" title="清空重置为任意">重置</button>
       </div>
     </div>
@@ -95,10 +95,10 @@
     <div class="weekday-grid">
       <button class="weekday-btn" data-day="0">日</button>
       <button class="weekday-btn" data-day="1">一</button>
-      <button class="weekday-btn" data-day="2">二</button>
-      <button class="weekday-btn" data-day="3">三</button>
+      <button class="weekday-btn selected" data-day="2">二</button>
+      <button class="weekday-btn selected" data-day="3">三</button>
       <button class="weekday-btn" data-day="4">四</button>
-      <button class="weekday-btn" data-day="5">五</button>
+      <button class="weekday-btn selected" data-day="5">五</button>
       <button class="weekday-btn" data-day="6">六</button>
     </div>
   </div>
@@ -107,14 +107,14 @@
     <div class="form-group">
       <label>日期 (1-31，逗号分隔)</label>
       <div class="input-row">
-        <input type="text" id="day" placeholder="如 1,2,3,6,9">
+        <input type="text" id="day" placeholder="如 1,2,3,6,9" value="25">
         <button class="clear-btn" data-target="day" title="清空重置为任意">重置</button>
       </div>
     </div>
     <div class="form-group">
       <label>月份 (1-12 或 JAN-DEC，逗号分隔)</label>
       <div class="input-row">
-        <input type="text" id="month" placeholder="如 1,3,5 或 JAN,MAR">
+        <input type="text" id="month" placeholder="如 1,3,5 或 JAN,MAR" value="3">
         <button class="clear-btn" data-target="month" title="清空重置为任意">重置</button>
       </div>
     </div>
@@ -155,7 +155,7 @@
 
   <script>
     const weekdayBtns = document.querySelectorAll('.weekday-btn');
-    let selectedWeekdays = [];
+    let selectedWeekdays = [2, 3, 5];
 
     weekdayBtns.forEach(btn => {
       btn.addEventListener('click', () => {
