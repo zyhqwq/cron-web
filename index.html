@@ -5,62 +5,115 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cron Schedule Generator</title>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-    h1 { font-size: 1.4rem; color: #333; margin-bottom: 24px; border-bottom: 1px solid #ddd; padding-bottom: 12px; }
-    .mode-group { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-    .mode-group h3 { font-size: 1.1rem; color: #555; margin-bottom: 12px; }
+    :root {
+      --bg: #ffffff;
+      --text: #333333;
+      --text-2: #555555;
+      --text-3: #666666;
+      --text-muted: #888888;
+      --border: #e0e0e0;
+      --border-light: #dddddd;
+      --card-bg: #fafafa;
+      --input-bg: #ffffff;
+      --input-border: #cccccc;
+      --hover-bg: #f0f0f0;
+      --accent: #1a73e8;
+      --accent-strong: #1557b0;
+      --accent-soft: #dbeafe;
+      --accent-text: #1a56c4;
+      --weekday-sel-bg: #e8f0fe;
+      --err: #c5221f;
+      --ok: #188038;
+      --code-bg: #1a1a2e;
+      --code-text: #f5c542;
+    }
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #e6e6e6;
+      --text-2: #b8b8b8;
+      --text-3: #a0a0a0;
+      --text-muted: #777777;
+      --border: #333333;
+      --border-light: #2c2c2c;
+      --card-bg: #1d1d1f;
+      --input-bg: #1d1d1f;
+      --input-border: #3a3a3a;
+      --hover-bg: #262626;
+      --accent: #5b9bff;
+      --accent-strong: #7fb0ff;
+      --accent-soft: #16294a;
+      --accent-text: #8ab4ff;
+      --weekday-sel-bg: #16294a;
+      --err: #ff6e63;
+      --ok: #5bb974;
+    }
+    html { background: var(--bg); }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; color: var(--text); background: var(--bg); transition: background 0.2s ease, color 0.2s ease; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 24px; }
+    h1 { font-size: 1.4rem; margin: 0; padding: 0; border: none; }
+    .theme-btn { cursor: pointer; background: var(--card-bg); color: var(--text-2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: 0.75rem; }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .mode-group { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    .mode-group h3 { font-size: 1.1rem; color: var(--text-2); margin-bottom: 12px; margin-top: 0; }
     .mode-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 8px; flex-wrap: wrap; border: 2px solid transparent; transition: all 0.15s ease; }
-    .mode-option:hover { background: #f0f0f0; }
-    .mode-option.selected { background: #dbeafe; border-color: #1a73e8; }
-    .mode-option.selected span { color: #1a56c4; font-weight: 600; }
-    .mode-option input { accent-color: #1a73e8; cursor: pointer; }
+    .mode-option:hover { background: var(--hover-bg); }
+    .mode-option.selected { background: var(--accent-soft); border-color: var(--accent); }
+    .mode-option.selected span { color: var(--accent-text); font-weight: 600; }
+    .mode-option input { accent-color: var(--accent); cursor: pointer; }
     .mode-option .note { width: 100%; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
     .form-group { margin: 8px 0; }
-    .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
-    .time-select { width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--text-2); margin-bottom: 4px; }
     .weekday-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 8px 0; }
-    .weekday-btn { padding: 6px 10px; font-size: 0.75rem; text-align: center; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
-    .weekday-btn:hover { background: #f5f5f5; }
-    .weekday-btn.selected { background: #e8f0fe; border-color: #088; color: #088; }
+    .weekday-btn { padding: 6px 10px; font-size: 0.75rem; text-align: center; cursor: pointer; border: 1px solid var(--border-light); border-radius: 4px; background: var(--input-bg); color: var(--text); }
+    .weekday-btn:hover { background: var(--hover-bg); }
+    .weekday-btn.selected { background: var(--weekday-sel-bg); border-color: var(--accent); color: var(--accent-text); }
     .input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-    .input-row input { width: 100%; padding: 6px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    .clear-btn { cursor: pointer; color: #555; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 4px 10px; font-size: 0.75rem; height: 34px; }
-    .clear-btn:hover { background: #e8e8e8; color: #333; }
-    .input-row input.error { border-color: #c00; background: #fff0f0; }
+    .input-row input { width: 100%; padding: 6px; font-size: 1rem; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text); }
+    .clear-btn { cursor: pointer; color: var(--text-2); background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 4px; padding: 4px 10px; font-size: 0.75rem; height: 34px; }
+    .clear-btn:hover { background: var(--hover-bg); color: var(--text); }
+    .input-row input.error { border-color: var(--err); background: rgba(197,34,31,0.06); }
     .cron-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .cron-label { font-size: 0.8rem; color: #666; }
-    .cron-input { width: 100%; background: #fff; color: #1a1a2e; font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 1.15rem; padding: 11px 14px; border-radius: 6px; border: 1px solid #ccc; letter-spacing: 3px; box-sizing: border-box; cursor: text; }
-    .cron-input:hover { border-color: #999; }
-    .cron-input:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15); }
-    .cron-input.error { border-color: #c5221f; }
-    .cron-input.error:focus { box-shadow: 0 0 0 2px rgba(197,34,31,0.12); }
-    .copy-btn { cursor: pointer; background: #1a73e8; color: #fff; border: none; border-radius: 4px; padding: 5px 14px; font-size: 0.8rem; }
-    .copy-btn:hover { background: #1557b0; }
+    .cron-label { font-size: 0.8rem; color: var(--text-3); }
+    .cron-input { width: 100%; background: var(--input-bg); color: var(--code-text); font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 1.15rem; padding: 11px 14px; border-radius: 6px; border: 1px solid var(--input-border); letter-spacing: 3px; box-sizing: border-box; cursor: text; }
+    .cron-input:hover { border-color: var(--text-muted); }
+    .cron-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(90,140,255,0.2); }
+    .cron-input.error { border-color: var(--err); }
+    .copy-btn { cursor: pointer; background: var(--accent); color: #fff; border: none; border-radius: 4px; padding: 5px 14px; font-size: 0.8rem; }
+    .copy-btn:hover { background: var(--accent-strong); }
     .copy-btn:active { transform: scale(0.96); }
-    .cron-display { background: #1a1a2e; color: #e94; font-family: monospace; padding: 16px; border-radius: 8px; margin: 20px 0; white-space: pre; font-size: 1.1rem; }
-    .cron-explain { color: #555; font-size: 0.9rem; margin: 8px 2px 6px; }
+    .cron-explain { color: var(--text-2); font-size: 0.9rem; margin: 8px 2px 6px; }
     .cron-status { font-size: 0.8rem; margin: 0 2px 18px; }
-    .cron-status.ok { color: #188038; }
-    .cron-status.err { color: #c5221f; }
-    .next-runs { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; background: #fafafa; }
-    .nr-title { font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 8px; }
+    .cron-status.ok { color: var(--ok); }
+    .cron-status.err { color: var(--err); }
+    .next-runs { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; background: var(--card-bg); }
+    .nr-title { font-size: 0.85rem; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
     .nr-row { display: flex; gap: 18px; font-size: 0.85rem; padding: 3px 0; flex-wrap: wrap; }
-    .nr-utc { color: #555; min-width: 230px; }
-    .nr-cct { color: #1a56c4; font-weight: 600; }
-    .nr-empty { color: #999; font-size: 0.8rem; }
+    .nr-utc { color: var(--text-2); min-width: 230px; }
+    .nr-cct { color: var(--accent-text); font-weight: 600; }
+    .nr-empty { color: var(--text-muted); font-size: 0.8rem; }
     .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .gh-yaml { background: #1a1a2e; color: #9cdcfe; font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; padding: 12px 14px; border-radius: 6px; overflow-x: auto; margin: 0 0 8px; white-space: pre; }
-    .help-text { font-size: 0.75rem; color: #666; line-height: 1.6; margin: 20px 0; }
-    .page-footer { text-align: center; padding: 16px 0 8px; border-top: 1px solid #eee; margin-top: 24px; }
-    .page-footer a { color: #888; font-size: 0.75rem; text-decoration: none; }
-    .page-footer a:hover { color: #1a73e8; text-decoration: underline; }
-    .note { font-size: 0.7rem; color: #888; margin-top: 8px; }
+    .gh-yaml { background: var(--code-bg); color: #9cdcfe; font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; padding: 12px 14px; border-radius: 6px; overflow-x: auto; margin: 0 0 8px; white-space: pre; border: 1px solid var(--border); }
+    .help-text { font-size: 0.75rem; color: var(--text-3); line-height: 1.6; margin: 20px 0; }
+    .page-footer { text-align: center; padding: 16px 0 8px; border-top: 1px solid var(--border-light); margin-top: 24px; }
+    .page-footer a { color: var(--text-muted); font-size: 0.75rem; text-decoration: none; }
+    .page-footer a:hover { color: var(--accent); text-decoration: underline; }
+    .note { font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; }
   </style>
+  <script>
+    (function () {
+      var pref = 'auto';
+      try { pref = localStorage.getItem('cronWebTheme') || 'auto'; } catch (e) {}
+      var dark = pref === 'dark' || (pref === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    })();
+  </script>
 </head>
 <body>
-  <h1>POSIX Cron 生成器</h1>
+  <div class="page-header">
+    <h1>POSIX Cron 生成器</h1>
+    <button id="themeBtn" class="theme-btn" type="button">主题: 自动</button>
+  </div>
 
   <div class="mode-group">
     <h3>模式选择</h3>
@@ -538,6 +591,35 @@
         fallbackCopy(text, done);
       }
     });
+
+    // 主题切换: 自动(跟随系统) -> 浅色 -> 深色 循环, 手动选择优先级最高
+    const THEME_KEY = 'cronWebTheme';
+    const themeBtn = document.getElementById('themeBtn');
+    const mqDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+    function themePref() {
+      try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) { return 'auto'; }
+    }
+
+    function applyTheme() {
+      const pref = themePref();
+      const dark = pref === 'dark' || (pref === 'auto' && mqDark && mqDark.matches);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      themeBtn.textContent = '主题: ' + (pref === 'auto' ? '自动' : (pref === 'dark' ? '深色' : '浅色'));
+    }
+
+    themeBtn.addEventListener('click', () => {
+      const cur = themePref();
+      const next = cur === 'auto' ? 'light' : (cur === 'light' ? 'dark' : 'auto');
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      applyTheme();
+    });
+
+    if (mqDark) {
+      if (mqDark.addEventListener) mqDark.addEventListener('change', applyTheme);
+      else if (mqDark.addListener) mqDark.addListener(applyTheme);
+    }
+    applyTheme();
   </script>
 </body>
 </html>
